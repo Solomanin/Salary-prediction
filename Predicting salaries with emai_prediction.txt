@@ -1,0 +1,48 @@
+G = nx.read_gpickle('email_prediction.txt') 
+
+print(nx.info(G))
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import MinMaxScaler
+def salary_predictions():
+    def is_management(node):
+        managementSalary = node[1]['ManagementSalary']
+        if managementSalary == 0:
+            return 0
+        elif managementSalary == 1:
+            return 1
+        else:
+            return None
+
+            return None
+
+    df = pd.DataFrame(index=G.nodes())
+    df['clustering'] = pd.Series(nx.clustering(G))
+    df['degree'] = pd.Series(G.degree())
+    df['degree_centrality'] = pd.Series(nx.degree_centrality(G))
+    df['closeness'] = pd.Series(nx.closeness_centrality(G, normalized=True))
+    df['betweeness'] = pd.Series(nx.betweenness_centrality(G, normalized=True))
+    df['pr'] = pd.Series(nx.pagerank(G))
+    df['is_management'] = pd.Series([is_management(node) for node in G.nodes(data=True)])
+    df_train = df[~pd.isnull(df['is_management'])]
+    df_test = df[pd.isnull(df['is_management'])]
+    features = ['clustering', 'degree', 'degree_centrality', 'closeness', 'betweeness', 'pr']
+    X_train = df_train[features]
+    Y_train = df_train['is_management']
+    X_test = df_test[features]
+    Y_test = df_train['is_management']
+    scaler = MinMaxScaler()
+    scaler.fit(X_train)
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    clf = MLPClassifier(hidden_layer_sizes = [10, 5], alpha = 5,
+                       random_state = 0, solver='lbfgs', verbose=0)
+    clf.fit(X_train_scaled, Y_train)
+    test_proba = clf.predict_proba(X_test_scaled)[:, 1]
+    return pd.Series(test_proba,X_test.index)
+    
+    
+    
+    
+    
+salary_predictions()
